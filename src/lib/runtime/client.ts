@@ -1,42 +1,28 @@
 /**
- * Projection Control Plane — Runtime Client (Placeholder)
+ * Projection Control Plane — Runtime Client
  *
- * This module is the integration point between the UI layer and the PCP
- * runtime. When the backend is wired, replace the mock return values with
- * real HTTP/SSE/WebSocket calls to the LangGraph-backed runtime.
+ * Wires the UI layer to the PCP Orchestrator (server/index.ts).
  *
- * Integration path:
- *   1. Compile the library:          npm run build:lib
- *   2. Stand up the runtime server:  (to be implemented)
- *   3. Replace submitRequest/getExecutionTrace with real API calls.
- *   4. Wire streamEvents to the server-sent-events endpoint.
- *
- * The runtime server will:
- *   - Accept OrchestrationStartInput (see src/langgraph/types.ts)
- *   - Invoke the compiled LangGraph graph via LangGraphOrchestrationAdapter
- *   - Stream OrchestrationStreamEvents back to this client
- *   - Expose a resumeApproval endpoint for approval gate resolution
+ * submitRequest  → POST /api/execute  (returns full ExecutionTrace)
+ * getExecutionTrace → GET /api/execute/:id
+ * resolveApprovalGate → POST /api/approve/:gateId  (stubbed — not yet on server)
+ * streamEvents → SSE /api/execute/:id/stream        (stubbed — not yet on server)
  */
 
 import type { ExecutionScenario } from "../mock/execution";
-import { MOCK_SCENARIOS } from "../mock/execution";
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
 export interface RuntimeClientConfig {
-  /** Base URL of the PCP runtime server. */
   baseUrl: string;
-  /** API key for authenticating with the runtime. */
-  apiKey?: string;
-  /** Request timeout in milliseconds. Default: 30_000. */
   timeoutMs?: number;
 }
 
 export const DEFAULT_CONFIG: RuntimeClientConfig = {
-  baseUrl: process.env["NEXT_PUBLIC_RUNTIME_URL"] ?? "http://localhost:3001",
-  timeoutMs: 30_000,
+  baseUrl: "",  // relative — requests go through Next.js API routes at /api/execute
+  timeoutMs: 60_000,
 };
 
 // ---------------------------------------------------------------------------
@@ -52,17 +38,30 @@ export interface SubmitRequestPayload {
 
 /**
  * Submit a new user request to the PCP runtime.
- *
- * TODO: Replace with POST /api/execute when the runtime server is running.
- * Returns a mock execution ID for now.
+ * POSTs to /api/execute and returns the trace ID from the full response.
  */
 export async function submitRequest(
-  _payload: SubmitRequestPayload,
-  _config: RuntimeClientConfig = DEFAULT_CONFIG,
+  payload: SubmitRequestPayload,
+  config: RuntimeClientConfig = DEFAULT_CONFIG,
 ): Promise<string> {
-  // Simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  return `exec-${Math.random().toString(36).slice(2, 10)}`;
+  const res = await fetch(`${config.baseUrl}/api/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      principalId: payload.principalId,
+      userMessage: payload.userMessage,
+      sessionId: payload.sessionId,
+    }),
+    signal: AbortSignal.timeout(config.timeoutMs ?? 60_000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`[runtime] POST /api/execute failed ${res.status}: ${body}`);
+  }
+
+  const trace = (await res.json()) as { id: string };
+  return trace.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,26 +69,67 @@ export async function submitRequest(
 // ---------------------------------------------------------------------------
 
 /**
- * Retrieve the execution trace for a completed or in-progress execution.
- *
- * TODO: Replace with GET /api/execute/:id when the runtime server is running.
- * Returns mock scenario data for demo purposes.
+ * Retrieve the execution trace for a completed execution.
+ * GETs /api/execute/:id and returns the trace shaped as ExecutionScenario.
  */
 export async function getExecutionTrace(
   executionId: string,
-  _config: RuntimeClientConfig = DEFAULT_CONFIG,
+  config: RuntimeClientConfig = DEFAULT_CONFIG,
 ): Promise<ExecutionScenario | null> {
-  await new Promise((resolve) => setTimeout(resolve, 80));
+  const res = await fetch(`${config.baseUrl}/api/execute/${executionId}`, {
+    signal: AbortSignal.timeout(config.timeoutMs ?? 60_000),
+  });
 
-  // Match mock scenario by ID prefix, or return the first scenario as default
-  const matched = MOCK_SCENARIOS.find((s) =>
-    s.id.startsWith(executionId.slice(0, 8)),
-  );
-  return matched ?? (MOCK_SCENARIOS[0] ?? null);
+  if (res.status === 404) return null;
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`[runtime] GET /api/execute/${executionId} failed ${res.status}: ${body}`);
+  }
+
+  // ExecutionTrace (server) and ExecutionScenario (UI) are structurally identical
+  return res.json() as Promise<ExecutionScenario>;
 }
 
 // ---------------------------------------------------------------------------
-// Approval gate resolution
+// Multi-turn chat
+// ---------------------------------------------------------------------------
+
+export interface ChatTurnPayload {
+  principalId: string;
+  userMessage: string;
+  conversationId: string;
+  sessionId?: string;
+}
+
+export interface ChatTurnResult {
+  conversationId: string;
+  response: string;
+  phase: string;
+  turnCount: number;
+}
+
+export async function sendChatMessage(
+  payload: ChatTurnPayload,
+  config: RuntimeClientConfig = DEFAULT_CONFIG,
+): Promise<ChatTurnResult> {
+  const res = await fetch(`${config.baseUrl}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(config.timeoutMs ?? 60_000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`[runtime] POST /api/chat failed ${res.status}: ${body}`);
+  }
+
+  return res.json() as Promise<ChatTurnResult>;
+}
+
+// ---------------------------------------------------------------------------
+// Approval gate resolution (stubbed — server endpoint not yet implemented)
 // ---------------------------------------------------------------------------
 
 export interface ApprovalResolutionPayload {
@@ -99,42 +139,23 @@ export interface ApprovalResolutionPayload {
   notes?: string;
 }
 
-/**
- * Resolve a pending approval gate.
- *
- * TODO: Replace with POST /api/approve/:gateId when the runtime server
- * is running. This triggers CompiledOrchestrationGraph.resumeApproval()
- * on the server, which resumes the suspended LangGraph thread.
- */
 export async function resolveApprovalGate(
   _payload: ApprovalResolutionPayload,
   _config: RuntimeClientConfig = DEFAULT_CONFIG,
 ): Promise<{ resumed: boolean }> {
-  await new Promise((resolve) => setTimeout(resolve, 120));
+  // TODO: POST /api/approve/:gateId when the server exposes this endpoint
   return { resumed: true };
 }
 
 // ---------------------------------------------------------------------------
-// Event streaming (SSE placeholder)
+// Event streaming (stubbed — server SSE endpoint not yet implemented)
 // ---------------------------------------------------------------------------
 
-/**
- * Stream real-time orchestration events for an active execution.
- *
- * TODO: Replace with EventSource('/api/execute/:id/stream') when the
- * runtime server exposes an SSE endpoint for OrchestrationStreamEvents.
- *
- * The server-side stream yields:
- *   OrchestrationStreamEvent — see src/langgraph/types.ts
- * Event types: message-delta, node-started, node-completed, phase-changed,
- *              approval-required, execution-completed, error
- */
 export function streamEvents(
   _executionId: string,
   _onEvent: (event: Record<string, unknown>) => void,
   _config: RuntimeClientConfig = DEFAULT_CONFIG,
 ): () => void {
-  // TODO: return an EventSource and wire _onEvent to its message handler.
-  // Return a no-op cleanup function until real streaming is implemented.
+  // TODO: wire to EventSource('/api/execute/:id/stream') when server exposes SSE
   return () => undefined;
 }
