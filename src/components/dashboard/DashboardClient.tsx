@@ -32,10 +32,10 @@ function Arrow() {
 }
 
 // ---------------------------------------------------------------------------
-// Scenario selector
+// Scenario tabs
 // ---------------------------------------------------------------------------
 
-type TabEntry = { id: string; label: string; live?: boolean };
+type TabEntry = { id: string; label: string; hasLive?: boolean };
 
 function ScenarioTabs({
   tabs,
@@ -58,7 +58,7 @@ function ScenarioTabs({
               : "border-transparent text-slate-500 hover:text-slate-300"
           }`}
         >
-          {t.live && (
+          {t.hasLive && (
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-violet-400" />
           )}
           {t.label}
@@ -88,64 +88,73 @@ function LoadingOverlay() {
 // Main dashboard
 // ---------------------------------------------------------------------------
 
-const LIVE_ID = "__live__";
 const CHAT_ID = "__chat__";
 
 export function DashboardClient() {
   const [activeId, setActiveId] = useState<string>(MOCK_SCENARIOS[0]?.id ?? "");
   const [liveTrace, setLiveTrace] = useState<ExecutionScenario | null>(null);
+  const [liveTabId, setLiveTabId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [message, setMessage] = useState(MOCK_SCENARIOS[0]?.request.userMessage ?? "");
   const [principalId, setPrincipalId] = useState(MOCK_SCENARIOS[0]?.request.principalId ?? "principal-user@mfg.corp");
 
-  async function handleSubmit(principalId: string, userMessage: string) {
+  async function handleSubmit(pid: string, userMessage: string) {
+    const fromTabId = activeId;
     setIsSubmitting(true);
     setSubmitError(null);
-    setActiveId(LIVE_ID);
 
     try {
       const execId = await submitRequest({
-        principalId,
+        principalId: pid,
         sessionId: `sess-${Date.now()}`,
         userMessage,
       });
       const trace = await getExecutionTrace(execId);
       if (trace) {
         setLiveTrace(trace);
+        setLiveTabId(fromTabId);
       } else {
         setSubmitError("Execution completed but trace was not found.");
-        setActiveId(MOCK_SCENARIOS[0]?.id ?? "");
       }
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Execution failed.");
-      setActiveId(MOCK_SCENARIOS[0]?.id ?? "");
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  function clearLive() {
+    setLiveTrace(null);
+    setLiveTabId(null);
+  }
+
   function selectTab(id: string) {
     setActiveId(id);
-    const scenario = MOCK_SCENARIOS.find((s) => s.id === id);
-    if (scenario) {
-      setMessage(scenario.request.userMessage);
-      setPrincipalId(scenario.request.principalId);
+    const s = MOCK_SCENARIOS.find((s) => s.id === id);
+    if (s) {
+      setMessage(s.request.userMessage);
+      setPrincipalId(s.request.principalId);
     }
   }
 
-  const mockTabs: TabEntry[] = MOCK_SCENARIOS.map((s) => ({ id: s.id, label: s.label }));
-  const liveTabs: TabEntry[] =
-    liveTrace || isSubmitting ? [{ id: LIVE_ID, label: "Live", live: true }] : [];
-  const chatTab: TabEntry[] = [{ id: CHAT_ID, label: "Chat" }];
-  const tabs = [...mockTabs, ...liveTabs, ...chatTab];
+  const isLiveView = activeId === liveTabId && liveTrace !== null;
 
   const scenario: ExecutionScenario | undefined =
     activeId === CHAT_ID
       ? undefined
-      : activeId === LIVE_ID
-        ? (liveTrace ?? undefined)
+      : isLiveView
+        ? liveTrace
         : MOCK_SCENARIOS.find((s) => s.id === activeId);
+
+  const tabs: TabEntry[] = [
+    ...MOCK_SCENARIOS.map((s) => ({
+      id: s.id,
+      label: s.label,
+      hasLive: s.id === liveTabId && liveTrace !== null,
+    })),
+    { id: CHAT_ID, label: "Chat" },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950">
@@ -170,12 +179,28 @@ export function DashboardClient() {
             {/* Tabs + status */}
             <div className="flex items-center gap-5">
               <ScenarioTabs tabs={tabs} activeId={activeId} onSelect={selectTab} />
-              {scenario && (
-                <Badge variant={scenario.overallStatus} dot label={scenario.overallStatus} />
-              )}
-              {isSubmitting && !scenario && (
-                <Badge variant="pending" dot label="running" />
-              )}
+
+              <div className="flex items-center gap-2">
+                {isSubmitting && (
+                  <Badge variant="pending" dot label="running" />
+                )}
+                {!isSubmitting && scenario && (
+                  <Badge variant={scenario.overallStatus} dot label={scenario.overallStatus} />
+                )}
+                {isLiveView && (
+                  <>
+                    <span className="rounded bg-violet-950 px-1.5 py-0.5 text-[10px] font-medium text-violet-400">
+                      Live
+                    </span>
+                    <button
+                      onClick={clearLive}
+                      className="text-[10px] text-slate-600 hover:text-slate-400"
+                    >
+                      reset
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
           </div>
@@ -212,7 +237,7 @@ export function DashboardClient() {
         )}
 
         {/* Loading state */}
-        {activeId !== CHAT_ID && isSubmitting && activeId === LIVE_ID && (
+        {activeId !== CHAT_ID && isSubmitting && (
           <LoadingOverlay />
         )}
 
