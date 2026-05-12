@@ -183,21 +183,23 @@ export function DashboardClient() {
       </header>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Submit panel                                                        */}
+      {/* Submit panel — hidden on Chat tab                                  */}
       {/* ------------------------------------------------------------------ */}
-      <div className="border-b border-slate-800/50 bg-slate-950">
-        <div className="mx-auto max-w-screen-xl px-6 py-4">
-          <SubmitPanel
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            error={submitError}
-            message={message}
-            onMessageChange={setMessage}
-            principalId={principalId}
-            onPrincipalChange={setPrincipalId}
-          />
+      {activeId !== CHAT_ID && (
+        <div className="border-b border-slate-800/50 bg-slate-950">
+          <div className="mx-auto max-w-screen-xl px-6 py-4">
+            <SubmitPanel
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              error={submitError}
+              message={message}
+              onMessageChange={setMessage}
+              principalId={principalId}
+              onPrincipalChange={setPrincipalId}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* Main content                                                        */}
