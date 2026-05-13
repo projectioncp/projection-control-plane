@@ -9,7 +9,7 @@
  * streamEvents → SSE /api/execute/:id/stream        (stubbed — not yet on server)
  */
 
-import type { ExecutionScenario } from "../mock/execution";
+import type { ExecutionScenario, MockAuditEvent } from "../mock/execution";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -107,6 +107,7 @@ export interface ChatTurnResult {
   response: string;
   phase: string;
   turnCount: number;
+  auditEvents: MockAuditEvent[];
 }
 
 export async function sendChatMessage(

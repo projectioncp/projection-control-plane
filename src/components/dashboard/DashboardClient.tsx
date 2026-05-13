@@ -231,10 +231,10 @@ export function DashboardClient() {
       {/* ------------------------------------------------------------------ */}
       <main className="mx-auto w-full max-w-screen-xl flex-1 px-6 py-8">
 
-        {/* Chat panel */}
-        {activeId === CHAT_ID && (
+        {/* Chat panel — always mounted to preserve conversation state across tab switches */}
+        <div className={activeId === CHAT_ID ? "" : "hidden"}>
           <ChatPanel principalId={principalId} />
-        )}
+        </div>
 
         {/* Loading state */}
         {activeId !== CHAT_ID && isSubmitting && (

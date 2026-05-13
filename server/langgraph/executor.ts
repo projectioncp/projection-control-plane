@@ -27,7 +27,9 @@ import type {
   OrchestrationContext,
   ConversationMessage,
   WorkflowPhase,
+  CompletedConversationTurn,
 } from "../../src/langgraph/types.js";
+import type { AuditEvent } from "../types.js";
 import {
   StandardWorkflowGraphDefinition,
   WorkflowGraphBuilder,
@@ -163,6 +165,81 @@ function getNextNodeId(currentNodeId: string, state: OrchestrationState): string
 }
 
 // ---------------------------------------------------------------------------
+// Build audit events from a completed turn
+// ---------------------------------------------------------------------------
+
+function buildTurnAuditEvents(turn: CompletedConversationTurn): AuditEvent[] {
+  const events: AuditEvent[] = [];
+  const total = turn.durationMs;
+
+  if (turn.frameId) {
+    events.push({
+      eventId: `evt-${turn.turnId.slice(0, 8)}-frame`,
+      type: "frame-created",
+      outcome: "success",
+      timestamp: turn.startedAt,
+      durationMs: Math.round(total * 0.35),
+      actor: "projection-engine",
+      detail: "Decision frame projected from user intent",
+      spanId: `span-${turn.turnId.slice(0, 8)}-frame`,
+    });
+  }
+
+  if (turn.guardrailDecision) {
+    const outcome = turn.guardrailDecision === "allow" ? "success" : turn.guardrailDecision;
+    events.push({
+      eventId: `evt-${turn.turnId.slice(0, 8)}-guard`,
+      type: "guardrail-evaluated",
+      outcome,
+      timestamp: turn.startedAt,
+      durationMs: Math.round(total * 0.1),
+      actor: "guardrail-engine",
+      detail: `Governance decision: ${turn.guardrailDecision.toUpperCase()}`,
+      spanId: `span-${turn.turnId.slice(0, 8)}-guard`,
+    });
+
+    if (turn.guardrailDecision === "deny") {
+      events.push({
+        eventId: `evt-${turn.turnId.slice(0, 8)}-denied`,
+        type: "entitlement-denied",
+        outcome: "denied",
+        timestamp: turn.startedAt,
+        actor: "guardrail-engine",
+        detail: "Request blocked by governance policy",
+        spanId: `span-${turn.turnId.slice(0, 8)}-denied`,
+      });
+    }
+  }
+
+  if (turn.capabilityId) {
+    const isApproval = turn.outcome === "awaiting-approval";
+    events.push({
+      eventId: `evt-${turn.turnId.slice(0, 8)}-cap`,
+      type: isApproval ? "approval-requested" : "capability-executed",
+      outcome: isApproval ? "awaiting-approval" : turn.outcome === "executed" ? "success" : turn.outcome,
+      timestamp: turn.startedAt,
+      durationMs: Math.round(total * 0.45),
+      actor: "capability-dispatcher",
+      detail: `${turn.capabilityId} — ${isApproval ? "submitted for approval" : turn.outcome}`,
+      spanId: `span-${turn.turnId.slice(0, 8)}-cap`,
+    });
+  }
+
+  events.push({
+    eventId: `evt-${turn.turnId.slice(0, 8)}-done`,
+    type: "turn-completed",
+    outcome: turn.outcome === "responded" || turn.outcome === "executed" ? "success" : turn.outcome,
+    timestamp: turn.completedAt,
+    durationMs: total,
+    actor: "orchestrator",
+    detail: `Turn completed in ${total}ms — ${turn.outcome}`,
+    spanId: `span-${turn.turnId.slice(0, 8)}-done`,
+  });
+
+  return events;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -178,6 +255,7 @@ export interface ConversationTurnResult {
   response: string;
   phase: WorkflowPhase;
   turnCount: number;
+  auditEvents: AuditEvent[];
 }
 
 export async function runConversationTurn(
@@ -240,7 +318,11 @@ export async function runConversationTurn(
       ? lastAssistantMsg.content
       : "I was unable to generate a response.";
 
+  const lastTurn = state.completedTurns[state.completedTurns.length - 1];
+  const auditEvents: AuditEvent[] = lastTurn ? buildTurnAuditEvents(lastTurn) : [];
+
   return {
+    auditEvents,
     conversationId,
     response,
     phase: state.phase,

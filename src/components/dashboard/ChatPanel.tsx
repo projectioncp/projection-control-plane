@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { MockAuditEvent } from "@/lib/mock/execution";
 import { sendChatMessage } from "@/lib/runtime/client";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { AuditTimeline } from "./AuditTimeline";
 
 interface ChatMessage {
   id: string;
@@ -17,13 +15,10 @@ interface ChatPanelProps {
   principalId: string;
 }
 
-// ---------------------------------------------------------------------------
-// ChatPanel
-// ---------------------------------------------------------------------------
-
 export function ChatPanel({ principalId }: ChatPanelProps) {
   const [conversationId] = useState(() => `conv-${Date.now()}`);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [auditEvents, setAuditEvents] = useState<MockAuditEvent[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [turnCount, setTurnCount] = useState(0);
@@ -34,18 +29,12 @@ export function ChatPanel({ principalId }: ChatPanelProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function handleSend() {
-    const text = input.trim();
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? input).trim();
     if (!text || isSending) return;
 
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: "user",
-      content: text,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: "user", content: text }]);
+    if (!overrideText) setInput("");
     setIsSending(true);
 
     try {
@@ -59,20 +48,15 @@ export function ChatPanel({ principalId }: ChatPanelProps) {
       setTurnCount(result.turnCount);
       setMessages((prev) => [
         ...prev,
-        {
-          id: `msg-${Date.now()}`,
-          role: "assistant",
-          content: result.response,
-        },
+        { id: `msg-${Date.now()}`, role: "assistant", content: result.response },
       ]);
+      if (result.auditEvents?.length) {
+        setAuditEvents((prev) => [...prev, ...result.auditEvents]);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        {
-          id: `msg-err-${Date.now()}`,
-          role: "error",
-          content: err instanceof Error ? err.message : "Request failed.",
-        },
+        { id: `msg-err-${Date.now()}`, role: "error", content: err instanceof Error ? err.message : "Request failed." },
       ]);
     } finally {
       setIsSending(false);
@@ -88,12 +72,13 @@ export function ChatPanel({ principalId }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/60" style={{ height: "calc(100vh - 220px)", minHeight: 480 }}>
+    <>
+    <div className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 h-[600px]">
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-300">Multi-turn Chat</span>
+          <span className="text-xs font-medium text-slate-300">Chat</span>
           <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-500">
             {conversationId}
           </span>
@@ -109,15 +94,12 @@ export function ChatPanel({ principalId }: ChatPanelProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex h-full items-center justify-center text-xs text-slate-600">
-            Send a message to start a conversation. The session will persist across turns.
+            Start a conversation.
           </div>
         )}
 
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
               className={`max-w-[82%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
                 msg.role === "user"
@@ -169,21 +151,20 @@ export function ChatPanel({ principalId }: ChatPanelProps) {
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-slate-400 transition-colors hover:border-violet-700 hover:text-slate-200 disabled:opacity-40"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M1 7h12M7 1l6 6-6 6"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
-        <div className="mt-1.5 text-[10px] text-slate-700">
-          Principal: {principalId}
-        </div>
+        <div className="mt-1.5 text-[10px] text-slate-700">Principal: {principalId}</div>
       </div>
 
     </div>
+
+    {auditEvents.length > 0 && (
+      <div className="mt-5">
+        <AuditTimeline events={auditEvents} />
+      </div>
+    )}
+    </>
   );
 }
