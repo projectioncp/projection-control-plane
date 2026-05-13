@@ -207,35 +207,110 @@ Audit / Telemetry
 
 # Quick Start
 
-## Prerequisites
+## 1. Prerequisites
 
 - Node.js ≥ 20
-- [Ollama](https://ollama.com) running locally with `gemma3:4b` pulled
-
-```bash
-ollama pull gemma3:4b
-ollama serve
-```
-
-## Install
 
 ```bash
 npm install
 ```
 
-## Run
+## 2. Choose your LLM provider
 
-Two processes, two terminals:
+Pick one path and follow the steps for it. You can change providers at any time by updating `.env.local`.
+
+---
+
+### Option A — No LLM (mock, no API key needed)
+
+Deterministic keyword-based responses. No model, no key, no network calls. Good for trying the UI or running in CI.
 
 ```bash
-# Terminal 1 — UI (http://localhost:3000)
-npm run dev
+npm run dev:mock
+```
 
-# Terminal 2 — Orchestrator (http://localhost:3001)
+Skip to step 3 — no `.env.local` needed for this option.
+
+---
+
+### Option B — Ollama (local, free)
+
+Runs a model on your machine. Requires [Ollama](https://ollama.com) installed.
+
+```bash
+ollama pull gemma3:4b   # or any model you prefer
+ollama serve
+```
+
+Create `.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+`.env.local` (Ollama defaults — no changes needed unless using a different model):
+```env
+LLM_PROVIDER=ollama
+LLM_MODEL=gemma3:4b
+```
+
+Start the orchestrator:
+```bash
 npm run dev:orchestrator
 ```
 
-Open `http://localhost:3000`. Use the built-in example prompts or write your own operational request.
+---
+
+### Option C — OpenAI
+
+```bash
+npm install openai
+cp .env.example .env.local
+```
+
+`.env.local`:
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+LLM_MODEL=gpt-4o
+```
+
+Start the orchestrator:
+```bash
+npm run dev:orchestrator
+```
+
+---
+
+### Option D — Anthropic (Claude)
+
+```bash
+npm install @anthropic-ai/sdk
+cp .env.example .env.local
+```
+
+`.env.local`:
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+LLM_MODEL=claude-sonnet-4-6
+```
+
+Start the orchestrator:
+```bash
+npm run dev:orchestrator
+```
+
+---
+
+## 3. Start the UI
+
+In a separate terminal:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
 
 ---
 
@@ -245,8 +320,8 @@ Open `http://localhost:3000`. Use the built-in example prompts or write your own
 
 | Variable | Default | Description |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | LLM backend to use: `ollama`, `openai`, or `anthropic` |
-| `LLM_MODEL` | *(provider default)* | Model name override — overrides the provider's default model |
+| `LLM_PROVIDER` | `ollama` | `mock`, `ollama`, `openai`, or `anthropic` |
+| `LLM_MODEL` | *(provider default)* | Override the provider's default model |
 
 Provider defaults:
 
@@ -255,24 +330,7 @@ Provider defaults:
 | `mock` | — | *(none)* | — |
 | `ollama` | `gemma3:4b` | *(built-in)* | — |
 | `openai` | `gpt-4o` | `npm install openai` | `OPENAI_API_KEY` |
-| `anthropic` | `claude-opus-4-5` | `npm install @anthropic-ai/sdk` | `ANTHROPIC_API_KEY` |
-
-The `mock` provider uses keyword-based deterministic projection and canned synthesis responses — no LLM or API key required. Suitable for hosted demos and CI.
-
-Examples:
-```bash
-# No LLM — deterministic mock responses (hosted demo, CI)
-npm run dev:mock
-
-# Use OpenAI GPT-4o
-LLM_PROVIDER=openai OPENAI_API_KEY=sk-... npm run dev:orchestrator
-
-# Use Anthropic Claude with a specific model
-LLM_PROVIDER=anthropic LLM_MODEL=claude-sonnet-4-6 ANTHROPIC_API_KEY=sk-ant-... npm run dev:orchestrator
-
-# Use a different Ollama model
-LLM_MODEL=llama3.2 npm run dev:orchestrator
-```
+| `anthropic` | `claude-sonnet-4-6` | `npm install @anthropic-ai/sdk` | `ANTHROPIC_API_KEY` |
 
 ## Orchestrator
 
