@@ -1,4 +1,10 @@
 node_modules/
 dist/
+.next/
 .DS_Store
 *.js.map
+
+# Environment — never commit real keys
+.env.local
+.env.*.local
+.env

@@ -2,6 +2,7 @@
   "name": "projection-control-plane",
   "version": "0.1.0",
   "description": "Governed operational AI runtime mediating probabilistic AI reasoning and deterministic enterprise execution.",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,17 +17,37 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "dev": "next dev",
+    "dev:orchestrator": "tsx watch server/index.ts",
+    "dev:mock": "LLM_PROVIDER=mock tsx watch server/index.ts",
+    "build": "next build",
+    "start": "next start",
+    "build:lib": "tsc --project tsconfig.lib.json",
+    "typecheck": "tsc --noEmit --project tsconfig.lib.json",
+    "typecheck:app": "tsc --noEmit",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "next": "^14.2.3",
+    "ollama": "^0.6.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/node": "^20.12.12"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.5"
   },
   "engines": {
     "node": ">=20"

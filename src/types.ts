@@ -393,8 +393,26 @@ export interface ExecutionRequest {
 
 // ---------------------------------------------------------------------------
 // AuditRecord
+//
+// @deprecated — superseded by the canonical Audit layer in `src/audit/`.
+//   Migrate to the canonical types:
+//     AuditEventType  →  import type { AuditEventType }  from "./audit/types.js"
+//     AuditOutcome    →  import type { AuditOutcome }    from "./audit/types.js"
+//     AuditRecord     →  import type { AuditRecord }     from "./audit/types.js"
+//   Or use the public barrel: import type { ... } from "./audit/index.js"
+//
+//   The canonical AuditRecord replaces the flat `details: Metadata` bag with
+//   a typed AuditEvent discriminated union, adds distributed tracing fields
+//   (traceId, spanId, sequenceNumber), a hash chain (previousChecksum), a
+//   structured AuditActor, and denormalized cross-references for queryability.
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated Use `AuditEventType` from `./audit/types.js` instead.
+ * The canonical audit layer defines 16 typed event variants covering the
+ * full governance lifecycle: frame, guardrail, policy, approval, capability,
+ * rollback, and hook events.
+ */
 export type AuditEventType =
   | "frame-created"
   | "frame-expired"
@@ -412,9 +430,23 @@ export type AuditEventType =
   | "policy-violation"
   | "entitlement-denied";
 
+/**
+ * @deprecated Use `AuditOutcome` from `./audit/types.js` instead.
+ * The canonical AuditOutcome adds: "approved", "flagged", "timed-out", "rolled-back".
+ */
 export type AuditOutcome = "success" | "failure" | "denied" | "pending";
 
 /**
+ * @deprecated Use `AuditRecord` from `./audit/types.js` instead.
+ *
+ * The canonical AuditRecord includes:
+ *   - `event: AuditEvent`        — typed discriminated union (not `details: Metadata`)
+ *   - `traceId`, `spanId`        — distributed tracing identifiers
+ *   - `sequenceNumber`           — monotonic ordering within a trace
+ *   - `previousChecksum`         — hash chain for tamper detection
+ *   - `actor: AuditActor`        — structured actor (not flat principalId/sessionId)
+ *   - Denormalized `frameId`, `executionRequestId`, `capabilityId` for queryability
+ *
  * An immutable record of a single governance event in the runtime.
  *
  * AuditRecords form the tamper-evident ledger of everything the system
@@ -454,8 +486,22 @@ export interface AuditRecord {
 
 // ---------------------------------------------------------------------------
 // HookContext
+//
+// @deprecated — superseded by the typed Hook Framework in `src/hooks/`.
+//   Migrate to the canonical types:
+//     HookStage    →  import type { HookStage }    from "./hooks/types.js"
+//     HookOutcome  →  import type { HookOutcome }  from "./hooks/types.js"
+//     HookResult   →  import type { HookResult }   from "./hooks/types.js"
+//     HookContext  →  import type { HookContext }   from "./hooks/types.js"
+//   Or use the public barrel: import type { ... } from "./hooks/index.js"
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated Use `HookStage` from `./hooks/types.js` instead.
+ * The canonical Hook Framework defines seven typed lifecycle stages:
+ * beforeProjection, afterProjection, beforeGuardrail, afterGuardrail,
+ * beforeCapability, afterCapability, onError — each with a dedicated context type.
+ */
 export type HookStage =
   | "pre-validation"    // before Guardrail evaluates the request
   | "post-validation"   // after Guardrail passes or fails
@@ -465,13 +511,21 @@ export type HookStage =
   | "on-approval"       // when an approval decision arrives
   | "on-rollback";      // when rollback is triggered
 
+/**
+ * @deprecated Use `HookOutcome` from `./hooks/types.js` instead.
+ * The canonical Hook Framework extends outcomes with: skip, override, escalate.
+ */
 export type HookOutcome =
   | "continue"    // proceed with normal flow
   | "abort"       // halt execution and surface an error
   | "retry"       // re-queue the ExecutionRequest for another attempt
   | "escalate";   // route to human review outside the normal approval flow
 
-/** Result produced by a single hook handler. */
+/**
+ * @deprecated Use `HookResult` from `./hooks/types.js` instead.
+ * The canonical HookResult includes: hookId (string), stage, outcome, reason,
+ * error (HookError), outputOverride, payload, executedAt (ISOTimestamp), durationMs.
+ */
 export interface HookResult {
   hookId: ID;
   stage: HookStage;
@@ -484,6 +538,11 @@ export interface HookResult {
 }
 
 /**
+ * @deprecated Use stage-specific context types from `./hooks/types.js` instead:
+ * BeforeProjectionContext, AfterProjectionContext, BeforeGuardrailContext,
+ * AfterGuardrailContext, BeforeCapabilityContext, AfterCapabilityContext, OnErrorContext.
+ * Or use the `HookContext` union type from `./hooks/types.js`.
+ *
  * The context object passed to every hook handler at a lifecycle stage.
  *
  * Hooks receive the full execution context so they can make informed

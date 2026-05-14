@@ -84,3 +84,75 @@ export { runAuthorizationStage } from "./stages/authorization.js";
 export { runPolicyStage } from "./stages/policy.js";
 export { runConstraintsStage } from "./stages/constraints.js";
 export { runApprovalStage } from "./stages/approval.js";
+
+// ---------------------------------------------------------------------------
+// Policy engine contracts
+//
+// The policy engine types are exported from their own sub-module and
+// re-exported here for convenience. GuardrailDecision from the policy engine
+// is a discriminated union — richer than the string union above. It is
+// aliased as PolicyDecision to prevent collision during the migration period.
+// ---------------------------------------------------------------------------
+
+export type {
+  PolicyId,
+  GuardrailAction,
+  PolicyDenyCode,
+  PolicyViolationKind,
+  PolicyViolationSeverity,
+  PolicyScope,
+  PolicyCondition,
+  PolicyThreshold,
+  PolicyRule,
+  PolicyApprovalConfig,
+  PolicyRateLimitConfig,
+  GuardrailPolicy,
+  PolicyViolation,
+  PolicyMatchDetail,
+  PolicyFlag,
+  DecisionAllow,
+  DecisionDeny,
+  DecisionRequireApproval,
+  DecisionFlag,
+  // Re-exported as PolicyDecision to avoid collision with the string union above.
+  GuardrailDecision as PolicyDecision,
+  PolicyFrameContext,
+  PolicyCapabilityContext,
+  PolicyEvaluationRequest,
+  PolicyEvaluationResult,
+} from "./policy/index.js";
+
+export {
+  PolicyIdSchema,
+  GuardrailActionSchema,
+  PolicyDenyCodeSchema,
+  PolicyViolationKindSchema,
+  PolicyViolationSeveritySchema,
+  PolicyScopeSchema,
+  PolicyConditionSchema,
+  PolicyThresholdSchema,
+  PolicyRuleSchema,
+  PolicyApprovalConfigSchema,
+  PolicyRateLimitConfigSchema,
+  GuardrailPolicySchema,
+  PolicyViolationSchema,
+  PolicyFlagSchema,
+  PolicyMatchDetailSchema,
+  DecisionAllowSchema,
+  DecisionDenySchema,
+  DecisionRequireApprovalSchema,
+  DecisionFlagSchema,
+  GuardrailDecisionSchema as PolicyDecisionSchema,
+  PolicyCapabilityContextSchema,
+  PolicyFrameContextSchema,
+  PolicyEvaluationRequestSchema,
+  PolicyEvaluationResultSchema,
+} from "./policy/index.js";
+
+export type {
+  GuardrailPolicyOutput,
+  GuardrailPolicyInput,
+  PolicyEvaluationRequestOutput,
+  PolicyEvaluationRequestInput,
+  PolicyEvaluationResultOutput,
+} from "./policy/index.js";
