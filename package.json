@@ -18,8 +18,9 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:ui": "next dev",
     "dev:orchestrator": "tsx watch server/index.ts",
-    "dev:mock": "LLM_PROVIDER=mock tsx watch server/index.ts",
+    "dev:orchestrator:mock": "LLM_PROVIDER=mock tsx watch server/index.ts",
     "build": "next build",
     "start": "next start",
     "build:lib": "tsc --project tsconfig.lib.json",
@@ -31,7 +32,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "next": "^14.2.3",
+    "next": "^16.2.6",
     "ollama": "^0.6.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -228,7 +228,7 @@ Pick one path and follow the steps for it. You can change providers at any time 
 Deterministic keyword-based responses. No model, no key, no network calls. Good for trying the UI or running in CI.
 
 ```bash
-npm run dev:mock
+npm run dev:orchestrator:mock
 ```
 
 Skip to step 3 — no `.env.local` needed for this option.
@@ -309,7 +309,7 @@ npm run dev:orchestrator
 In a separate terminal:
 
 ```bash
-npm run dev
+npm run dev:ui
 ```
 
 Open `http://localhost:3000`.

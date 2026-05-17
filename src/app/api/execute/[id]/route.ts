@@ -4,11 +4,12 @@ const RUNTIME_URL = process.env["RUNTIME_URL"] ?? "http://localhost:3001";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let res: Response;
   try {
-    res = await fetch(`${RUNTIME_URL}/api/execute/${params.id}`);
+    res = await fetch(`${RUNTIME_URL}/api/execute/${id}`);
   } catch {
     return NextResponse.json(
       { error: "Orchestrator is not reachable. Start it with: npm run dev:orchestrator" },

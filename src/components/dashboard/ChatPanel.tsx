@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import type { MockAuditEvent } from "@/lib/mock/execution";
 import { sendChatMessage } from "@/lib/runtime/client";
 import { AuditTimeline } from "./AuditTimeline";
@@ -16,7 +16,8 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ principalId }: ChatPanelProps) {
-  const [conversationId] = useState(() => `conv-${Date.now()}`);
+  const uid = useId();
+  const conversationId = `conv-${uid.replace(/:/g, "")}`;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [auditEvents, setAuditEvents] = useState<MockAuditEvent[]>([]);
   const [input, setInput] = useState("");
