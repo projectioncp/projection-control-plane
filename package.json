@@ -19,8 +19,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:ui": "next dev",
-    "dev:orchestrator": "tsx watch server/index.ts",
-    "dev:orchestrator:mock": "LLM_PROVIDER=mock tsx watch server/index.ts",
+    "dev:orchestrator": "LLM_PROVIDER=mock tsx watch server/index.ts",
+    "dev:orchestrator:llm": "tsx watch server/index.ts",
     "build": "next build",
     "start": "next start",
     "build:lib": "tsc --project tsconfig.lib.json",

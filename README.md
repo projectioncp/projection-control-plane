@@ -2,7 +2,19 @@
 
 > AI doesn't see your enterprise. It sees what you project.
 
-![Projection Architecture](docs/images/projection-architecture.png)
+## Quick Start
+
+```bash
+# Terminal 1 — UI (http://localhost:3000)
+npm run dev:ui
+
+# Terminal 2 — Orchestrator (defaults to mock, no LLM required)
+npm run dev:orchestrator
+```
+
+> Need a real LLM? See [Choose your LLM provider](#2-choose-your-llm-provider) below.
+
+---
 
 Projection Control Plane is a governed operational AI runtime designed to safely mediate between probabilistic AI reasoning systems and deterministic enterprise execution systems.
 
@@ -228,7 +240,7 @@ Pick one path and follow the steps for it. You can change providers at any time 
 Deterministic keyword-based responses. No model, no key, no network calls. Good for trying the UI or running in CI.
 
 ```bash
-npm run dev:orchestrator:mock
+npm run dev:orchestrator
 ```
 
 Skip to step 3 — no `.env.local` needed for this option.
@@ -257,7 +269,7 @@ LLM_MODEL=gemma3:4b
 
 Start the orchestrator:
 ```bash
-npm run dev:orchestrator
+npm run dev:orchestrator:llm
 ```
 
 ---
@@ -278,7 +290,7 @@ LLM_MODEL=gpt-4o
 
 Start the orchestrator:
 ```bash
-npm run dev:orchestrator
+npm run dev:orchestrator:llm
 ```
 
 ---
@@ -299,7 +311,7 @@ LLM_MODEL=claude-sonnet-4-6
 
 Start the orchestrator:
 ```bash
-npm run dev:orchestrator
+npm run dev:orchestrator:llm
 ```
 
 ---
