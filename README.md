@@ -345,3 +345,9 @@ Provider defaults:
 | Variable | Default | Description |
 |---|---|---|
 | `RUNTIME_URL` | `http://localhost:3001` | URL the Next.js proxy uses to reach the Orchestrator |
+
+# Contact
+
+For questions, architecture discussions, or collaboration inquiries:
+
+projection.control.plane@gmail.com
