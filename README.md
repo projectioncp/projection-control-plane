@@ -2,6 +2,8 @@
 
 > AI doesn't see your enterprise. It sees what you project.
 
+![Projection Architecture](docs/images/projection-architecture.png)
+
 Projection Control Plane is a governed operational AI runtime designed to safely mediate between probabilistic AI reasoning systems and deterministic enterprise execution systems.
 
 The platform introduces bounded operational cognition through Decision Frames and governed execution through Guardrail validation.
