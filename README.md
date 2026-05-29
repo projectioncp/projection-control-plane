@@ -182,10 +182,10 @@ Pipeline stages:
 | File | Stage | Description |
 |---|---|---|
 | `orchestrator.ts` | Coordinator | Sequences all stages, owns the in-memory trace store |
-| `projector.ts` | Frame Projection | Calls Gemma via Ollama to produce a structured Decision Frame |
+| `projector.ts` | Frame Projection | Calls the configured LLM to produce a structured Decision Frame |
 | `guardrail.ts` | Guardrail Evaluation | Deterministic rule-based governance (auth, export control, supplier access, operational threshold) |
 | `dispatcher.ts` | Capability Dispatch | Executes authorized capabilities and returns structured results |
-| `synthesizer.ts` | Response Synthesis | Calls Gemma to produce a natural-language operational response |
+| `synthesizer.ts` | Response Synthesis | Calls the configured LLM to produce a natural-language operational response |
 | `types.ts` | Shared Types | `ExecutionRequest`, `ExecutionTrace`, `ProjectedFrame`, `GuardrailResult`, etc. |
 | `index.ts` | HTTP Entry Point | Express server exposing the orchestrator over HTTP |
 
@@ -204,7 +204,7 @@ The frontend dashboard. Visualizes the full execution pipeline — projection fr
 ```
 Request
     ↓
-Projection Layer      ← Gemma builds the Decision Frame
+Projection Layer      ← LLM builds the Decision Frame
     ↓
 Decision Frame
     ↓
@@ -212,7 +212,7 @@ Guardrail Evaluation  ← deterministic rule-based governance
     ↓
 Capability Dispatch   ← deterministic enterprise execution
     ↓
-Response Synthesis    ← Gemma generates the operational response
+Response Synthesis    ← LLM generates the operational response
     ↓
 Audit / Telemetry
 ```

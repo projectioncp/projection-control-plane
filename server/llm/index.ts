@@ -15,7 +15,7 @@ let _provider: LLMProvider | null = null;
  *   LLM_PROVIDER=mock       — No LLM, keyword-based deterministic responses (default for hosted demos)
  *   LLM_PROVIDER=ollama     — Ollama local inference (default model: gemma3:4b)
  *   LLM_PROVIDER=openai     — OpenAI API           (default model: gpt-4o)
- *   LLM_PROVIDER=anthropic  — Anthropic API        (default model: claude-opus-4-5)
+ *   LLM_PROVIDER=anthropic  — Anthropic API        (default model: claude-sonnet-4-6)
  *
  * Set LLM_MODEL to override the default model for the selected provider.
  */

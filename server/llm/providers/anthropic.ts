@@ -4,7 +4,7 @@ export class AnthropicProvider implements LLMProvider {
   private readonly model: string;
 
   constructor() {
-    this.model = process.env["LLM_MODEL"] ?? "claude-opus-4-5";
+    this.model = process.env["LLM_MODEL"] ?? "claude-sonnet-4-6";
   }
 
   async chat(messages: LLMMessage[], options: LLMChatOptions = {}): Promise<string> {
